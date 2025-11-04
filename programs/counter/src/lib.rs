@@ -4,7 +4,7 @@ declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 
 #[program]
 pub mod counter_program {
-    use crate::instruction::Initialize;
+
 
     use super::*;
 
@@ -16,14 +16,14 @@ pub mod counter_program {
 
     pub fn increment(ctx: Context<ModifyCounter>) -> Result<()>{
         let counter = &mut ctx.accounts.counter_account;
-        counter.count += 1;
+        counter.count = counter.count.checked_add(1).ok_or(CustomError::CounterOverflow)?;
         Ok(())
     }
 
     pub fn decrement(ctx: Context<ModifyCounter>) -> Result<()>{
         let counter = &mut ctx.accounts.counter_account;
         require!(counter.count > 0, CustomError::CounterUnderflow);
-        counter.count -= 1;
+        counter.count = counter.count.checked_sub(1).ok_or(CustomError::CounterUnderflow)?;
         Ok(())
     }
 }
@@ -63,4 +63,6 @@ pub struct CounterAccount   {
 pub enum CustomError {
     #[msg("Counter cannot be below zero.")]
     CounterUnderflow,
+    #[msg("Cannot be infinitely large.")]
+    CounterOverflow,
 }
